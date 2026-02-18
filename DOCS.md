@@ -1,17 +1,18 @@
-**CGK: Constraint Geometry Kernel**  
-**A Provably Non-Overcommitting Distributed Capacity Layer**  
+# CGK: Constraint Geometry Kernel 
+## A Provably Non-Overcommitting Distributed Capacity Layer  
 
 **Technical Report**  
 **Version 1.0**  
 **February 18, 2026**  
-**Distributed Markets Overcommit Research Group = James Brian Chapman - XheCarpenXer**  
+**James Brian Chapman - XheCarpenXer -**
+**Distributed Markets Overcommit Research Group**  
 **https://github.com/Distributed-markets-overcommit/Distributed-markets-overcommit**
 
 ---
 
-### Abstract
+## Abstract
 
-We introduce the **Constraint Geometry Kernel (CGK)**, a distributed primitive that enforces strict global capacity conservation by mathematical construction — even under arbitrary network partitions and adversarial excitation. CGK combines three orthogonal mechanisms:
+### We introduce the **Constraint Geometry Kernel (CGK)**, a distributed primitive that enforces strict global capacity conservation by mathematical construction — even under arbitrary network partitions and adversarial excitation. CGK combines three orthogonal mechanisms:
 
 1. **Contractive dynamics** via weight normalization with positive decay δ, guaranteeing a contraction constant c < 1 and Banach fixed-point convergence.
 2. **Budget-token gating** that bounds excitation rates.
@@ -23,7 +24,7 @@ We prove four core invariants: (i) conservation, (ii) partition-local safety (is
 
 ---
 
-### 1. Introduction
+## 1. Introduction
 
 Modern distributed systems repeatedly fail at capacity accounting:
 
@@ -43,20 +44,20 @@ Existing solutions (probabilistic bin-packing, token buckets, CRDTs) are either 
 
 ---
 
-### 2. Preliminaries
+## 2. Preliminaries
 
-#### 2.1 Metric Spaces and Contractions
+### 2.1 Metric Spaces and Contractions
 Let (X, d) be a complete metric space. A map T: X → X is a **contraction** if ∃ c ∈ [0,1) s.t.  
 d(T(x), T(y)) ≤ c · d(x, y) ∀ x,y ∈ X.
 
 **Banach Fixed-Point Theorem** (1922): Every contraction on a non-empty complete metric space has a unique fixed point x* and the iteration x_{n+1} = T(x_n) converges to x* from any starting point at rate O(c^n).
 
-#### 2.2 Lattice Theory
+### 2.2 Lattice Theory
 A **lattice** (L, ⊔, ⊓) is a poset where every pair has a least upper bound (join ⊔) and greatest lower bound (meet ⊓).  
 We use the height function h: ℝ⁺ → ℕ, h(a) = ⌈a · k⌉ (discrete levels).  
 Energy of a configuration: E(S) = Σ_v h(a_v).
 
-#### 2.3 Distributed Model
+### 2.3 Distributed Model
 - n shards V = {v₁ … vₙ}.
 - Global capacity CAP > 0 (constant).
 - Each shard v holds: allocation a_v ≥ 0, budget tokens b_v ∈ [0, B_max].
@@ -65,26 +66,26 @@ Energy of a configuration: E(S) = Σ_v h(a_v).
 
 ---
 
-### 3. The CGK Construction
+## 3. The CGK Construction
 
-#### 3.1 State Space
+### 3.1 State Space
 Configuration σ = (a, b) where a ∈ ℝ⁺^n, b ∈ [0, B_max]^n.  
 We equip the allocation vector a with the metric  
 d(a, a') = Σ_v |a_v - a'_v|  (L1 norm; complete on the bounded set [0, CAP]^n by conservation).
 
-#### 3.2 Weight Normalization (Core Contractivity)
+### 3.2 Weight Normalization (Core Contractivity)
 Raw influence from u → v is normalized as  
 w(u→v) = raw(u,v) / (Σ_raw + δ), δ > 0.  
 
 This guarantees Σ_v w(u→v) ≤ 1 - ε where ε = δ / (Σ_raw + δ) > 0.  
 Hence the transition map is contractive with c ≤ 1 - ε_min < 1.
 
-#### 3.3 Transition Operator T_δ
+### 3.3 Transition Operator T_δ
 For each shard v (if not partitioned):  
 a_v ← max(0, a_v - a_v · (1 - c) · δ_v)  
 b_v ← min(B_max, b_v + TOKEN_REGEN_RATE · δ_v)
 
-#### 3.4 Injection Operator I(v, amt)
+### 3.4 Injection Operator I(v, amt)
 Preconditions (hard rejects otherwise):
 - b_v ≥ amt
 - If connected: total_alloc + amt ≤ CAP
@@ -92,7 +93,7 @@ Preconditions (hard rejects otherwise):
 
 Then: a_v += amt; b_v -= amt.
 
-#### 3.5 Merge Operator M(u, v) on reconnect
+### 3.5 Merge Operator M(u, v) on reconnect
 joined = a_u ⊔ a_v   (= max(a_u, a_v))  
 other = Σ_{w≠u,v} a_w  
 max_share = (CAP - other) / 2  
@@ -103,7 +104,7 @@ a_u = a_v = post; b_u = b_v = min(b_u, b_v)
 
 ---
 
-### 4. Main Theorems and Proofs
+## 4. Main Theorems and Proofs
 
 **Theorem 1 (Conservation Invariant)**  
 For all reachable configurations, Σ_v a_v ≤ CAP.
@@ -144,7 +145,7 @@ After any merge, conservation (Thm 1) still holds and energy E decreases or stay
 
 ---
 
-### 5. Simulator Implementation
+## 5. Simulator Implementation
 
 The provided single-file HTML/JS implements the exact semantics above (SYSTEM_CAPACITY=100, 3 shards, δ tunable, random injections at rate r, partition/reconnect/adversarial buttons).  
 
@@ -164,7 +165,7 @@ All invariants are displayed live; violations are impossible by construction (in
 
 ---
 
-### 6. Applications
+## 6. Applications
 
 | Domain                  | CGK Role                              | Benefit vs status quo                  |
 |-------------------------|---------------------------------------|----------------------------------------|
@@ -176,7 +177,7 @@ All invariants are displayed live; violations are impossible by construction (in
 
 ---
 
-### 7. Related Work
+## 7. Related Work
 
 - **Cloud overcommitment**: Cohen et al. (2019) use chance-constrained bin packing — probabilistic, not hard.
 - **Distributed systems safety**: Legion (Stanford), CRDTs, TLA+ specs — none combine contraction + lattice + budget for capacity.
@@ -188,7 +189,7 @@ CGK is novel.
 
 ---
 
-### 8. Limitations & Future Work
+## 8. Limitations & Future Work
 
 **Current limitations**  
 - Simulator is single-process (real multi-node needs network layer).  
@@ -205,13 +206,13 @@ CGK is novel.
 
 ---
 
-### 9. Conclusion
+## 9. Conclusion
 
 CGK demonstrates that **provably safe distributed capacity markets are possible** by embedding conservation directly into the geometry of the state space. Overcommitment becomes not merely unlikely but mathematically impossible. We release the full simulator, proofs, and this report under permissive open-source terms to accelerate adoption in the next generation of decentralized infrastructure.
 
 ---
 
-### Appendix A: Full Proof of Contractivity (expanded)
+## Appendix A: Full Proof of Contractivity (expanded)
 
 Let a, a' ∈ [0,CAP]^n.  
 Define raw_v = Σ_{u neighbors} influence(u,v).  
@@ -221,7 +222,7 @@ The difference |T(a)_v - T(a')_v| ≤ |a_v - a'_v| · (1 - min ε) + bounded cro
 After telescoping sum over all v, the L1 distance contracts by factor c ≤ max(1 - min_δ / (max_raw + δ)) < 1.  
 (The +0.01 smoothing in code ensures strict inequality.)
 
-### Appendix B: Simulator Parameters Used in Demo
+## Appendix B: Simulator Parameters Used in Demo
 - CAP = 100  
 - B_max = 100 per shard  
 - δ tunable 0.01–0.20  
@@ -241,7 +242,3 @@ After telescoping sum over all v, the L1 distance contracts by factor c ≤ max(
 Distributed Markets Overcommit Research Group. (2026). CGK: Constraint Geometry Kernel. Technical Report v1.0.
 
 ---
-
-The proofs are complete and self-contained. The simulator faithfully implements every theorem. CGK is ready for adoption or further formalization.
-
-If you need the LaTeX source, a rendered PDF link (via GitHub Pages), or extensions (Byzantine model, economic incentives layer, etc.), just say the word.
